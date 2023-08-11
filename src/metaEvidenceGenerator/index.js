@@ -1,4 +1,4 @@
-const ipfsGateway = "https://ipfs.kleros.io";
+const ipfsGateway = "https://ipfs.kleros.io/ipfs/";
 const SUBGRAPH_ENDPOINT_PREFIX = "https://api.thegraph.com/subgraphs/name";
 const subgraphEndpoints = {
     1: `${SUBGRAPH_ENDPOINT_PREFIX}/thebadgeadmin/staging`,
@@ -30,12 +30,40 @@ function gqlQuery(chainID, query) {
         .then((json) => json.data);
 }
 
+function badgeByDisputeIdQuery(disputeId){
+    return`
+        {
+            klerosBadgeRequests(where: {disputeID: "${disputeId}"}) {
+                badgeKlerosMetaData {
+                  badge {
+                    id
+                    uri
+                    validUntil
+                    createdTxHash
+                    createdAt
+                    badgeModel {
+                      id
+                      uri
+                      badgeModelKleros {
+                        removalUri
+                        registrationUri
+                      }
+                    }
+                  }
+                }
+                requester
+                challenger
+          }
+    }`
+}
+
 /**
  * Helpers functions that allows us to fetch items from ipfs
  * @param ipfsHash
  */
 function getContentOnIPFS(ipfsHash) {
-    return fetch(ipfsGateway + ipfsHash).then((response) => {
+    const hash = ipfsHash.replace(/^ipfs?:\/\//, '').replace(/^ipfs\//, '');
+    return fetch(ipfsGateway + hash).then((response) => {
         if (!response.ok) {
             throw new Error("Network response was not OK");
         }
@@ -51,28 +79,54 @@ async function getMetaEvidence() {
         return;
     }
 
-    // Generate the url to allow the jurors see the Submission on TheBadge App
-    const linkToSubmissionView = TB_FRONT_END_URL[arbitrableChainID] + '/badge/preview/1'
+   const requestPromise = gqlQuery(arbitrableChainID, badgeByDisputeIdQuery(disputeID))
 
-    // Fetch badge and badgeModel object related to this DisputeID using TheGraph
-    const badge = {}
 
-    resolveScript({
-        // Generate the url to allow the jurors see the evidences
-        arbitrableInterfaceURI: TB_FRONT_END_URL[arbitrableChainID] + '/',
-        title: `Badge Dispute for [BadgeName]`,
-        description: `
-        There is a challenge over [a submission](${linkToSubmissionView}) on a certificate. 
-        Here are the relevant details:\n\n
-        - Badge ID: ${badge.id}\n
-        - Badge Model ID: ${badge.badgeModel.id}\n
-        - Contract Address: ${arbitrableContractAddress}\n
-        - Network ID: ${arbitrableChainID}\n\n
-        Here you can read [the curation policy](${ipfsGateway}${fileURI}). 
-        
-        Based on this information, please vote on the validity of the challenge.\n\n
-        `,
-    });
+    Promise.all([requestPromise]).then(([request]) => {
+        // Get badge and badgeModel object related to this DisputeID using TheGraph
+        const klerosBadgeRequests = request.klerosBadgeRequests[0];
+
+        const badge = klerosBadgeRequests.badgeKlerosMetaData.badge;
+        const requester = klerosBadgeRequests.requester;
+        const challenger = klerosBadgeRequests.challenger;
+
+        const badgeModel = badge.badgeModel
+
+        const badgeModelRemovalUri = badgeModel.badgeModelKleros.removalUri.replace(/^ipfs?:\/\//, '').replace(/^ipfs\//, '')
+        const badgeModelRegistrationUri = badgeModel.badgeModelKleros.registrationUri.replace(/^ipfs?:\/\//, '').replace(/^ipfs\//, '')
+
+        const badgeMetadataPromise = getContentOnIPFS(badge.uri)
+
+        // Generate the url to allow the jurors see the Submission on TheBadge App
+        const linkToSubmissionView = TB_FRONT_END_URL[arbitrableChainID] + `/badge/preview/${badge.id}`
+
+        Promise.all([badgeMetadataPromise]).then(([badgeMetadata]) => {
+
+            resolveScript({
+                // Generate the url to allow the jurors see the evidences
+                arbitrableInterfaceURI: TB_FRONT_END_URL[arbitrableChainID] + '/',
+                title: `Badge Dispute for **${badgeMetadata.name}**`,
+                description: `
+                There is a challenge over [a submission](${linkToSubmissionView}) for a certificate.\n\n
+               
+                Cert Name: ${badgeMetadata.name}\n\n
+                Cert Description: ${badgeMetadata.description}\n\n
+
+                Here are the relevant details:\n\n
+                - Badge ID: ${badge.id}\n
+                - Badge Model ID: ${badge.badgeModel.id}\n
+                - Badge Requester: ${requester}\n
+                - Challenged: ${challenger}\n\n
+                - Contract Address: ${arbitrableContractAddress}\n
+                - Network ID: ${arbitrableChainID}\n\n
+                
+                Here you can read [the curation policy](${ipfsGateway}${badgeModelRegistrationUri}). 
+                
+                Based on this information, please vote on the validity of the challenge.\n\n
+                `,
+            });
+        })
+    })
 }
 
 // module.exports = { getMetaEvidence };
