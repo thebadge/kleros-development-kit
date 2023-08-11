@@ -1,0 +1,27 @@
+{
+  "name": "@thebadge/kleros-development-kit",
+  "version": "1.0.0",
+  "description": "This repository serves as a central hub for all things related to the Kleros ecosystem integration. ",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thebadge/kleros-development-kit.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "eslint": "^8.19.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "prettier": "^2.7.1",
+    "typescript": "^4.7.4"
+
+  },
+  "bugs": {
+    "url": "https://github.com/thebadge/kleros-development-kit/issues"
+  },
+  "homepage": "https://github.com/thebadge/kleros-development-kit#readme"
+}
