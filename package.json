@@ -1,6 +1,7 @@
 {
   "name": "@thebadge/kleros-development-kit",
   "version": "1.0.0",
+  "license": "MIT",
   "description": "This repository serves as a central hub for all things related to the Kleros ecosystem integration. ",
   "main": "index.js",
   "scripts": {
@@ -11,8 +12,6 @@
     "type": "git",
     "url": "git+https://github.com/thebadge/kleros-development-kit.git"
   },
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
     "eslint": "^8.19.0",
     "eslint-config-prettier": "^8.5.0",
