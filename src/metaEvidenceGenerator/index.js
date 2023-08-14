@@ -92,21 +92,21 @@ async function getMetaEvidence() {
 
         const badgeModel = badge.badgeModel
 
-        const badgeModelRemovalUri = badgeModel.badgeModelKleros.removalUri.replace(/^ipfs?:\/\//, '').replace(/^ipfs\//, '')
-        const badgeModelRegistrationUri = badgeModel.badgeModelKleros.registrationUri.replace(/^ipfs?:\/\//, '').replace(/^ipfs\//, '')
+        const badgeModelRemovalPromise = getContentOnIPFS(badgeModel.badgeModelKleros.removalUri)
+        const badgeModelRegistrationPromise = getContentOnIPFS(badgeModel.badgeModelKleros.registrationUri)
 
         const badgeMetadataPromise = getContentOnIPFS(badge.uri)
 
         // Generate the url to allow the jurors see the Submission on TheBadge App
         const linkToSubmissionView = TB_FRONT_END_URL[arbitrableChainID] + `/badge/preview/${badge.id}`
 
-        Promise.all([badgeMetadataPromise]).then(([badgeMetadata]) => {
-
+        Promise.all([badgeModelRemovalPromise, badgeModelRegistrationPromise,badgeMetadataPromise])
+            .then(([badgeModelRemoval, badgeModelRegistration,badgeMetadata]) => {
             resolveScript({
                 // Generate the url to allow the jurors see the evidences
                 arbitrableInterfaceURI: TB_FRONT_END_URL[arbitrableChainID] + '/',
                 title: `Badge Dispute for **${badgeMetadata.name}**`,
-                description: `There is a challenge over [a submission](${linkToSubmissionView}) for a certificate.\n\nCert Name: ${badgeMetadata.name}\n\nCert Description: ${badgeMetadata.description}\n\nHere are the relevant details:\n\n- Badge ID: ${badge.id}\n- Badge Model ID: ${badge.badgeModel.id}\n- Badge Requester: ${requester}\n- Challenged: ${challenger}\n\n- Contract Address: ${arbitrableContractAddress}\n- Network ID: ${arbitrableChainID}\n\nHere you can read [the curation policy](${ipfsGateway}${badgeModelRegistrationUri}).Based on this information, please vote on the validity of the challenge.\n\n`,
+                description: `There is a challenge over [a submission](${linkToSubmissionView}) for a certificate.\n\nCert Name: ${badgeMetadata.name}\n\nCert Description: ${badgeMetadata.description}\n\nHere are the relevant details:\n\n- Badge ID: ${badge.id}\n- Badge Model ID: ${badge.badgeModel.id}\n- Badge Requester: ${requester}\n- Challenged: ${challenger}\n\n- Contract Address: ${arbitrableContractAddress}\n- Network ID: ${arbitrableChainID}\n\nHere you can read [the curation policy](${ipfsGateway}${badgeModelRegistration.fileURI}).Based on this information, please vote on the validity of the challenge.\n\n`,
             });
         })
     })
