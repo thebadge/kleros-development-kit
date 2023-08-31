@@ -3,10 +3,15 @@ const SUBGRAPH_ENDPOINT_PREFIX = "https://api.thegraph.com/subgraphs/name";
 const subgraphEndpoints = {
     1: `${SUBGRAPH_ENDPOINT_PREFIX}/thebadgeadmin/staging`,
     5: `${SUBGRAPH_ENDPOINT_PREFIX}/thebadgeadmin/develop`,
+    11155111: `https://api.studio.thegraph.com/query/51391/thebadge-dev/version/latest`,
+    100: ``
 };
+
 const TB_FRONT_END_URL = {
     1: 'https://dev-app.thebadge.xyz',
-    5: 'https://dev-app.thebadge.xyz'
+    5: 'https://dev-app.thebadge.xyz',
+    11155111: 'https://dev-app.thebadge.xyz',
+    100: 'https://dev-app.thebadge.xyz'
 }
 
 /**
@@ -96,15 +101,16 @@ async function getMetaEvidence() {
     // Generate the url to allow the jurors see the Submission on TheBadge App
     const linkToSubmissionView = TB_FRONT_END_URL[arbitrableChainID] + `/badge/preview/${badge.id}`
 
-    const [badgeModelRemoval, badgeModelRegistration,badgeMetadata] = await Promise.all([badgeModelRemovalPromise, badgeModelRegistrationPromise,badgeMetadataPromise])
+    const [badgeModelRemoval, badgeModelRegistration, badgeMetadata] = await Promise.all([badgeModelRemovalPromise, badgeModelRegistrationPromise,badgeMetadataPromise])
 
     const badgeRegistrationCriteria = badgeModelRegistration.fileURI || badgeModelRegistration.fileHash
-    const badgeRemovalCriteria = badgeModelRemovalPromise.fileURI || badgeModelRemovalPromise.fileHash
+    // TODO Add logic to show removal or registration
+    const badgeRemovalCriteria = badgeModelRemoval.fileURI || badgeModelRemoval.fileHash
 
 
     resolveScript({
         // Generate the url to allow the jurors see the evidences
-        arbitrableInterfaceURI: TB_FRONT_END_URL[arbitrableChainID],
+        // arbitrableInterfaceURI: TB_FRONT_END_URL[arbitrableChainID],
         title: `Badge Dispute for **${badgeMetadata.name}**`,
         description: `There is a challenge over [a submission](${linkToSubmissionView}) for a certificate.\n\nCert Name: ${badgeMetadata.name}\n\nCert Description: ${badgeMetadata.description}\n\nHere are the relevant details:\n\n- Badge ID: ${badge.id}\n- Badge Model ID: ${badge.badgeModel.id}\n- Badge Requester: ${requester}\n- Challenged: ${challenger}\n\n- Contract Address: ${arbitrableContractAddress}\n- Network ID: ${arbitrableChainID}\n\nHere you can read [the curation policy](${ipfsGateway}${badgeRegistrationCriteria}).Based on this information, please vote on the validity of the challenge.\n\n`,
     });
