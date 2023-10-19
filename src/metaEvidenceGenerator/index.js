@@ -3,10 +3,15 @@ const SUBGRAPH_ENDPOINT_PREFIX = "https://api.thegraph.com/subgraphs/name";
 const subgraphEndpoints = {
     1: `${SUBGRAPH_ENDPOINT_PREFIX}/thebadgeadmin/staging`,
     5: `${SUBGRAPH_ENDPOINT_PREFIX}/thebadgeadmin/develop`,
+    11155111: `https://api.studio.thegraph.com/query/51391/thebadge-dev/version/latest`,
+    100: ``
 };
+
 const TB_FRONT_END_URL = {
-    1: 'https://dev-app.thebadge.xyz/',
-    5: 'https://dev-app.thebadge.xyz/'
+    1: 'https://dev-app.thebadge.xyz',
+    5: 'https://dev-app.thebadge.xyz',
+    11155111: 'https://dev-app.thebadge.xyz',
+    100: 'https://dev-app.thebadge.xyz'
 }
 
 /**
@@ -79,37 +84,36 @@ async function getMetaEvidence() {
         return;
     }
 
-   const requestPromise = gqlQuery(arbitrableChainID, badgeByDisputeIdQuery(disputeID))
+    const request = await gqlQuery(arbitrableChainID, badgeByDisputeIdQuery(disputeID))
+    // Get badge and badgeModel object related to this DisputeID using TheGraph
+    const klerosBadgeRequests = request.klerosBadgeRequests[0];
+
+    const badge = klerosBadgeRequests.badgeKlerosMetaData.badge;
+    const requester = klerosBadgeRequests.requester;
+    const challenger = klerosBadgeRequests.challenger;
+
+    const badgeModel = badge.badgeModel
+
+    const badgeModelRemovalPromise = getContentOnIPFS(badgeModel.badgeModelKleros.removalUri)
+    const badgeModelRegistrationPromise = getContentOnIPFS(badgeModel.badgeModelKleros.registrationUri)
+    const badgeMetadataPromise = getContentOnIPFS(badge.uri)
+
+    // Generate the url to allow the jurors see the Submission on TheBadge App
+    const linkToSubmissionView = TB_FRONT_END_URL[arbitrableChainID] + `/badge/preview/${badge.id}`
+
+    const [badgeModelRemoval, badgeModelRegistration, badgeMetadata] = await Promise.all([badgeModelRemovalPromise, badgeModelRegistrationPromise,badgeMetadataPromise])
+
+    const badgeRegistrationCriteria = badgeModelRegistration.fileURI || badgeModelRegistration.fileHash
+    // TODO Add logic to show removal or registration
+    const badgeRemovalCriteria = badgeModelRemoval.fileURI || badgeModelRemoval.fileHash
 
 
-    Promise.all([requestPromise]).then(([request]) => {
-        // Get badge and badgeModel object related to this DisputeID using TheGraph
-        const klerosBadgeRequests = request.klerosBadgeRequests[0];
-
-        const badge = klerosBadgeRequests.badgeKlerosMetaData.badge;
-        const requester = klerosBadgeRequests.requester;
-        const challenger = klerosBadgeRequests.challenger;
-
-        const badgeModel = badge.badgeModel
-
-        const badgeModelRemovalPromise = getContentOnIPFS(badgeModel.badgeModelKleros.removalUri)
-        const badgeModelRegistrationPromise = getContentOnIPFS(badgeModel.badgeModelKleros.registrationUri)
-
-        const badgeMetadataPromise = getContentOnIPFS(badge.uri)
-
-        // Generate the url to allow the jurors see the Submission on TheBadge App
-        const linkToSubmissionView = TB_FRONT_END_URL[arbitrableChainID] + `/badge/preview/${badge.id}`
-
-        Promise.all([badgeModelRemovalPromise, badgeModelRegistrationPromise,badgeMetadataPromise])
-            .then(([badgeModelRemoval, badgeModelRegistration,badgeMetadata]) => {
-            resolveScript({
-                // Generate the url to allow the jurors see the evidences
-                arbitrableInterfaceURI: TB_FRONT_END_URL[arbitrableChainID] + '/',
-                title: `Badge Dispute for **${badgeMetadata.name}**`,
-                description: `There is a challenge over [a submission](${linkToSubmissionView}) for a certificate.\n\nCert Name: ${badgeMetadata.name}\n\nCert Description: ${badgeMetadata.description}\n\nHere are the relevant details:\n\n- Badge ID: ${badge.id}\n- Badge Model ID: ${badge.badgeModel.id}\n- Badge Requester: ${requester}\n- Challenged: ${challenger}\n\n- Contract Address: ${arbitrableContractAddress}\n- Network ID: ${arbitrableChainID}\n\nHere you can read [the curation policy](${ipfsGateway}${badgeModelRegistration.fileURI}).Based on this information, please vote on the validity of the challenge.\n\n`,
-            });
-        })
-    })
+    resolveScript({
+        // Generate the url to allow the jurors see the evidences
+        // arbitrableInterfaceURI: TB_FRONT_END_URL[arbitrableChainID],
+        title: `Badge Dispute for **${badgeMetadata.name}**`,
+        description: `There is a challenge over [a submission](${linkToSubmissionView}) for a certificate.\n\nCert Name: ${badgeMetadata.name}\n\nCert Description: ${badgeMetadata.description}\n\nHere are the relevant details:\n\n- Badge ID: ${badge.id}\n- Badge Model ID: ${badge.badgeModel.id}\n- Badge Requester: ${requester}\n- Challenged: ${challenger}\n\n- Contract Address: ${arbitrableContractAddress}\n- Network ID: ${arbitrableChainID}\n\nHere you can read [the curation policy](${ipfsGateway}${badgeRegistrationCriteria}).Based on this information, please vote on the validity of the challenge.\n\n`,
+    });
 }
 
 // module.exports = { getMetaEvidence };
