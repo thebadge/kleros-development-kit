@@ -1,9 +1,9 @@
 const ipfsGateway = "https://ipfs.kleros.io/ipfs/";
-const SUBGRAPH_ENDPOINT_PREFIX = "https://api.thegraph.com/subgraphs/name";
+const SUBGRAPH_ENDPOINT_PREFIX = "https://api.studio.thegraph.com/query/51391/thebadge";
 const subgraphEndpoints = {
-    1: `${SUBGRAPH_ENDPOINT_PREFIX}/thebadgeadmin/staging`,
-    5: `${SUBGRAPH_ENDPOINT_PREFIX}/thebadgeadmin/develop`,
-    11155111: `https://api.studio.thegraph.com/query/51391/thebadge-dev/version/latest`,
+    1: `${SUBGRAPH_ENDPOINT_PREFIX}-goerli-dev/version/latest`,
+    5: `${SUBGRAPH_ENDPOINT_PREFIX}-goerli-dev/version/latest`,
+    11155111: `${SUBGRAPH_ENDPOINT_PREFIX}-sepolia-dev/version/latest`,
     100: ``
 };
 
