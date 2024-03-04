@@ -46,6 +46,8 @@ function badgeByDisputeIdQuery(disputeId){
                     validUntil
                     createdTxHash
                     createdAt
+                    contractAddress
+                    networkName
                     badgeModel {
                       id
                       uri
@@ -99,7 +101,7 @@ async function getMetaEvidence() {
     const badgeMetadataPromise = getContentOnIPFS(badge.uri)
 
     // Generate the url to allow the jurors see the Submission on TheBadge App
-    const linkToSubmissionView = TB_FRONT_END_URL[arbitrableChainID] + `/badge/preview/${badge.id}`
+    const linkToSubmissionView = TB_FRONT_END_URL[arbitrableChainID] + `/badge/${badge.id}?contract=${arbitrableChainID}:${badge.contractAddress}`
 
     const [badgeModelRemoval, badgeModelRegistration, badgeMetadata] = await Promise.all([badgeModelRemovalPromise, badgeModelRegistrationPromise,badgeMetadataPromise])
 
@@ -112,7 +114,7 @@ async function getMetaEvidence() {
         // Generate the url to allow the jurors see the evidences
         // arbitrableInterfaceURI: TB_FRONT_END_URL[arbitrableChainID],
         title: `Badge Dispute for **${badgeMetadata.name}**`,
-        description: `There is a challenge over [a submission](${linkToSubmissionView}) for a certificate.\n\nCert Name: ${badgeMetadata.name}\n\nCert Description: ${badgeMetadata.description}\n\nHere are the relevant details:\n\n- Badge ID: ${badge.id}\n- Badge Model ID: ${badge.badgeModel.id}\n- Badge Requester: ${requester}\n- Challenged: ${challenger}\n\n- Contract Address: ${arbitrableContractAddress}\n- Network ID: ${arbitrableChainID}\n\nHere you can read [the curation policy](${ipfsGateway}${badgeRegistrationCriteria}).Based on this information, please vote on the validity of the challenge.\n\n`,
+        description: `There is a challenge over [a submission](${linkToSubmissionView}) for a certificate.\n\nCert Name: ${badgeMetadata.name}\n\nCert Description: ${badgeMetadata.description}\n\nHere are the relevant details:\n\n- Network: ${badge.networkName}\n- Badge ID: ${badge.id}\n- Badge Model ID: ${badge.badgeModel.id}\n- Badge Requester: ${requester}\n- Challenged: ${challenger}\n\n- Contract Address: ${arbitrableContractAddress}\n- Network ID: ${arbitrableChainID}\n\nHere you can read [the curation policy](${ipfsGateway}${badgeRegistrationCriteria}).Based on this information, please vote on the validity of the challenge.\n\n`,
     });
 }
 
